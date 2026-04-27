@@ -83,3 +83,69 @@ for (Account acc : [SELECT Id, Name FROM Account WHERE CreatedDate = TODAY]) {
     // Logic for each account goes here
     System.debug('Processing: ' + acc.Name);
 }
+
+////
+
+//Lightning Apps - bulk load for all perm sets
+Map<Id, List<SetupEntityAccess>> lightningAppsByPermSet =
+    new Map<Id, List<SetupEntityAccess>>();
+try {
+    for (SetupEntityAccess sea : [
+        SELECT SetupEntityId, SetupEntityType, ParentId
+        FROM SetupEntityAccess
+        WHERE ParentId IN :allPermSetIds
+        AND SetupEntityType = 'TabSet'
+    ]) {
+        if (!lightningAppsByPermSet.containsKey(
+                sea.ParentId)) {
+            lightningAppsByPermSet.put(sea.ParentId,
+                new List<SetupEntityAccess>());
+        }
+        lightningAppsByPermSet.get(sea.ParentId).add(sea);
+    }
+} catch (Exception e) {
+    System.debug(LoggingLevel.WARN,
+        'Lightning App bulk query failed: '
+        + e.getMessage());
+}
+
+/////
+
+// Lightning Apps (uses pre-loaded data, no SOQL)
+Set<Id> userPsIdsForApps = new Set<Id>();
+List<PermissionSetAssignment> userPSAsForApps =
+    psaByUser.containsKey(userId)
+    ? psaByUser.get(userId)
+    : new List<PermissionSetAssignment>();
+for (PermissionSetAssignment psa : userPSAsForApps) {
+    userPsIdsForApps.add(psa.PermissionSetId);
+}
+
+List<String> appNames = new List<String>();
+List<String> appUrls = new List<String>();
+for (Id psId : userPsIdsForApps) {
+    if (lightningAppsByPermSet.containsKey(psId)) {
+        for (SetupEntityAccess sea :
+                lightningAppsByPermSet.get(psId)) {
+            appNames.add(
+                String.valueOf(sea.SetupEntityId));
+            appUrls.add(buildLink(sea.SetupEntityId));
+        }
+    }
+}
+String lightningAppsValue =
+    String.join(appNames, SEPARATOR);
+String lightningAppsUrlsValue =
+    String.join(appUrls, SEPARATOR);
+
+//////
+perm.Assigned_Lightning_Apps__c =
+    lightningAppsValue;
+perm.Assigned_Lightning_Apps_URLs__c =
+    lightningAppsUrlsValue;
+
+/////
+computeEffectivePermissions(perm, userId,
+    psaByUser, objPermsByPermSet, prof);
+
+

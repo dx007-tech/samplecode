@@ -1,0 +1,85 @@
+1. Collections (List, Set, Map)
+Collections are used to store multiple items. In Apex, these are almost always heap-allocated using the new keyword.
+
+
+// List: An ordered collection that allows duplicates
+List<String> fruitList = new List<String>();
+fruitList.add('Apple');
+fruitList.add('Orange');
+
+// Set: An unordered collection of unique elements
+Set<Id> accountIds = new Set<Id>();
+accountIds.add('0018000000abcde');
+
+// Map: A collection of key-value pairs (Unique keys)
+Map<Id, Account> accountMap = new Map<Id, Account>();
+
+
+2. Loops and Control Flow
+These structures allow you to iterate through data and apply logic based on specific conditions.
+
+For Loop
+There are several types of for loops, but the List/Set iteration is the most common in Salesforce development.
+
+// Iterating over a list
+for (String fruit : fruitList) {
+    System.debug('Current fruit: ' + fruit);
+}
+
+// Traditional for loop
+for (Integer i = 0; i < 5; i++) {
+    System.debug('Counter is: ' + i);
+}
+
+If / Else Statement
+Used for basic conditional branching.
+
+Integer score = 85;
+
+if (score >= 90) {
+    System.debug('Grade: A');
+} else if (score >= 80) {
+    System.debug('Grade: B');
+} else {
+    System.debug('Grade: C');
+}
+
+Switch Statement (Case)
+Apex uses the switch on syntax rather than a traditional "case" keyword found in other languages.
+
+String leadStatus = 'Open';
+
+switch on leadStatus {
+    when 'Open' {
+        System.debug('Keep calling!');
+    }
+    when 'Closed - Converted', 'Closed - Not Converted' {
+        System.debug('Work is finished.');
+    }
+    when else {
+        System.debug('Status unknown.');
+    }
+}
+
+3. SOQL (Salesforce Object Query Language)
+SOQL is used to read records from the database. You wrap the query in square brackets [].
+
+// Querying a list of records
+List<Account> teaAccounts = [SELECT Id, Name, Industry
+                             FROM Account
+                             WHERE Industry = 'Agriculture'
+                             LIMIT 10];
+
+// Using a variable in a query (Bind Variable)
+String targetName = 'Acme Corp';
+Account myAcc = [SELECT Id, Name FROM Account WHERE Name = :targetName LIMIT 1];
+
+Pro-Tip: The "SOQL For Loop"
+In Salesforce, it is a best practice to combine your query and your loop to avoid hitting governor limits (specifically heap size limits).
+
+Java
+// This is the most efficient way to process large sets of records
+for (Account acc : [SELECT Id, Name FROM Account WHERE CreatedDate = TODAY]) {
+    // Logic for each account goes here
+    System.debug('Processing: ' + acc.Name);
+}
